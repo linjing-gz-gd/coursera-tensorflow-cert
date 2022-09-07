@@ -39,6 +39,29 @@ def pred_binary_dir(model, test_dir, cat0='category 0', cat1='category 1'):
         imgnp = keras.utils.img_to_array(img)/255
         pred_binary(model, imgnp, img_name, cat0, cat1)
         
+def pred_categorical(model, imgnp, img_name='this', cats):
+    classes = model.predict(imgnp[np.newaxis, ...])
+    
+    fig, ax = plt.subplots()
+    ax.imshow(imgnp)
+    ax.axis('off')
+    ax.set_title(
+        f'P({cat1}) = {classes[0, 0]:.2g}\n'
+        + img_name + ' is a ' + (cat1 if classes[0, 0] >= 0.5 else cat0)
+    )
+
+def pred_dir(model, test_dir, cats):
+    img_names = [file_name for file_name in os.listdir(test_dir)
+                           if file_name.endswith(('.png', '.jpg'))]
+    for img_name in img_names:
+        img = keras.utils.load_img(os.path.join(test_dir, img_name),
+                                   target_size=model.input_shape[1:3])
+        imgnp = keras.utils.img_to_array(img)/255
+        if len(cats) == 2:
+            pred_binary(model, imgnp, img_name, *cats)
+        else:
+            pred_categorical(model, imgnp, img_name, cats)
+        
 def conv_layers(model):
     layers_out = [l.output for l in model.layers if len(l.output_shape) == 4]
     return keras.models.Model(inputs=model.input, outputs=layers_out)
