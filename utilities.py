@@ -39,7 +39,7 @@ def pred_binary_dir(model, test_dir, cat0='category 0', cat1='category 1'):
         imgnp = keras.utils.img_to_array(img)/255
         pred_binary(model, imgnp, img_name, cat0, cat1)
         
-def pred_categorical(model, imgnp, img_name='this', cats):
+def pred_categorical(model, imgnp, img_name='this', cats=None):
     classes = model.predict(imgnp[np.newaxis, ...])
     
     fig, ax = plt.subplots()
@@ -123,3 +123,17 @@ def plot_train_val_metrics(history, metrics):
         axs[i].plot(epochs, history.history['val_'+met], label='val')
         set_ax(axs[i], 'epoch', met, legend=True, grid=True)
         
+def save_tsv(model, tokenizer, save_dir):
+    vecs = save_dir + '-v.tsv'
+    meta = save_dir + '-m.tsv'
+    
+    embedl = model.layers[0]
+    embedw = embedl.get_weights()[0]
+    
+    num_words = embedw.shape[0]
+    
+    with open(vecs, 'w') as out_v:
+        with open(meta, 'w') as out_m:
+            for i in range(1, num_words):
+                out_v.write('\t'.join(str(x) for x in embedw[i]) + '\n')
+                out_m.write(tokenizer.index_word[i] + '\n')
