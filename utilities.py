@@ -137,3 +137,12 @@ def save_tsv(model, tokenizer, save_dir):
             for i in range(1, num_words):
                 out_v.write('\t'.join(str(x) for x in embedw[i]) + '\n')
                 out_m.write(tokenizer.index_word[i] + '\n')
+                
+def embed_extremes(model, tokenizer, d=0, n=20):
+    wts = (model.layers[0].get_weights()[0][1:, d]
+           * np.sign(model.layers[2].get_weights()[0][0, d]))
+    idx = np.argsort(wts)
+    for i in range(n):
+        print(f'{wts[idx[i]]:-10.4f} {tokenizer.index_word[idx[i] + 1]:15}'
+              f'{wts[idx[-1-i]]:-10.4f} {tokenizer.index_word[idx[-1-i] + 1]:15}')
+        
