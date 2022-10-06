@@ -120,7 +120,8 @@ def plot_train_val_metrics(history, metrics):
     
     for i, met in enumerate(metrics):
         axs[i].plot(epochs, history.history[met], label='train')
-        axs[i].plot(epochs, history.history['val_'+met], label='val')
+        if ('val_' + met) in history.history:
+            axs[i].plot(epochs, history.history['val_'+met], label='val')
         set_ax(axs[i], 'epoch', met, legend=True, grid=True)
         
 def save_tsv(model, tokenizer, save_dir):
@@ -146,3 +147,64 @@ def embed_extremes(model, tokenizer, d=0, n=20):
         print(f'{wts[idx[i]]:-10.4f} {tokenizer.index_word[idx[i] + 1]:15}'
               f'{wts[idx[-1-i]]:-10.4f} {tokenizer.index_word[idx[-1-i] + 1]:15}')
         
+        
+class Heap:
+    def __init__(self, items, get_value=lambda x: x):
+        self.items = list(items)
+        self.get_value = get_value
+        for i in range(len(self.items))[::-1]:
+            self._topdown(i)
+        
+    def _topdown(self, i):
+        l, r = i*2 + 1, i*2 + 2
+        if l < len(self.items):
+            if ((r >= len(self.items))
+                or (self.get_value(self.items[l]) >= self.get_value(self.items[r]))):
+                ch = l
+            else:
+                ch = r
+            if self.get_value(self.items[i]) < self.get_value(self.items[ch]):
+                self.items[i], self.items[ch] = self.items[ch], self.items[i]
+                self._topdown(ch)
+            
+    def _bottomup(self, i):
+        if i > 0:
+            pr = (i - 1)//2
+            if self.get_value(self.items[i]) > self.get_value(self.items[pr]):
+                self.items[i], self.items[pr] = self.items[pr], self.items[i]
+                self._bottomup(pr)
+                
+    def numel(self):
+        return len(self.items)
+            
+    def root(self):
+        return self.items[0]
+        
+    def pop(self):
+        root, self.items[0] = self.items[0], self.items[-1]
+        del self.items[-1]
+        self._topdown(0)
+        return root
+    
+    def insert(self, newitem):
+        self.items.append(newitem)
+        self._bottomup(len(self.items) - 1)
+        
+    def _verify(self, i=0):
+        l, r = i*2 + 1, i*2 + 2
+        if l >= len(self.items):
+            return True
+        else:
+            if self.get_value(self.items[i]) < self.get_value(self.items[l]):
+                print(f'heap violation: node {i} < node {l}')
+                return False
+            else:
+                if r >= len(self.items):
+                    return self._verify(l)
+                else:
+                    if self.get_value(self.items[i]) < self.get_value(self.items[r]):
+                        print(f'heap violation: node {i} < node {r}')
+                        return False
+                    else:
+                        return self._verify(l) and self._verify(r)
+                    
