@@ -104,8 +104,8 @@ def get_layers_viewer(model, cat0='category 0', cat1='category 1', img_dir=None)
     
     return viewer
 
-def plot_train_val_metrics(history, metrics):
-    epochs = np.array(history.epoch) + 1
+def plot_train_val_metrics(history, metrics, start=0):
+    epochs = np.array(history.epoch)
     
     nmet = len(metrics)
     if nmet % 2 == 0:
@@ -119,10 +119,18 @@ def plot_train_val_metrics(history, metrics):
     axs = [axs] if nmet == 1 else axs.flatten()
     
     for i, met in enumerate(metrics):
-        axs[i].plot(epochs, history.history[met], label='train')
+        trn_min = min(history.history[met])
+        axs[i].plot(epochs[start:],
+                    history.history[met][start:],
+                    label=f'train min={trn_min:.3g}')
+        
         if ('val_' + met) in history.history:
-            axs[i].plot(epochs, history.history['val_'+met], label='val')
-        set_ax(axs[i], 'epoch', met, legend=True, grid=True)
+            val_min = min(history.history['val_'+met])
+            axs[i].plot(epochs[start:],
+                        history.history['val_'+met][start:],
+                        label=f'val min={val_min:.3g}')
+        
+        set_ax(axs[i], 'epoch', title=met, legend=True, grid=True)
         
 def save_tsv(model, tokenizer, save_dir):
     vecs = save_dir + '-v.tsv'
